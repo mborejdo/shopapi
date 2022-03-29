@@ -28,6 +28,15 @@ pub async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
+async fn validator(
+    req: ServiceRequest,
+    credentials: BearerAuth,
+) -> Result<ServiceRequest, Error> {
+    eprintln!("{:?}", credentials);
+
+    Ok(req)
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -48,7 +57,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(pool.clone())
+            .data(pool.clone())
             .wrap(Logger::default())
             // .wrap(HttpAuthentication::bearer(validator))
             .wrap(Cors::permissive())

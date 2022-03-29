@@ -43,9 +43,9 @@ impl User {
         let user = sqlx::query_as!(
             User,
             r#"
-              SELECT id, first_name, last_name, email, username, password, created_at
-                  FROM users
-              ORDER BY created_at
+                SELECT id, first_name, last_name, email, username, password, created_at
+                    FROM users
+                ORDER BY created_at
             "#
         )
         .fetch_all(pool)
@@ -58,9 +58,23 @@ impl User {
         let user = sqlx::query_as!(
             User,
             r#"
-              SELECT * FROM users WHERE id = $1
+                SELECT * FROM users WHERE id = $1
             "#,
             id
+        )
+        .fetch_one(&*pool)
+        .await?;
+
+        Ok(user)
+    }
+
+    async fn find_by_username(username: &str, pool: &PostgresPool) -> Result<User> {
+        let user = sqlx::query_as!(
+            User,
+            r#"
+                SELECT * FROM users WHERE username = $1
+            "#,
+            username
         )
         .fetch_one(&*pool)
         .await?;
@@ -73,7 +87,7 @@ impl User {
         let user = sqlx::query_as!(
             User,
             r#"
-              INSERT INTO users (first_name, last_name, email, username, password) VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO users (first_name, last_name, email, username, password) VALUES ($1, $2, $3, $4, $5)
                 RETURNING id, first_name, last_name, email, username, password, created_at
             "#,
             input.first_name,
@@ -94,7 +108,7 @@ impl User {
         let user = sqlx::query_as!(
             User,
             r#"
-              UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4
+                UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4
                 RETURNING id, first_name, last_name, email, username, password, created_at
             "#,
             input.first_name,
@@ -119,16 +133,19 @@ impl User {
         Ok(result.rows_affected())
     }
 
-    pub fn authenticate(credentials: Credentials) -> Result<AuthUser, HttpResponse> {
-        // TODO: figure out why I keep getting hacked
-        if &credentials.password != "password" {
-            return Err(HttpResponse::Unauthorized().json("Unauthorized"));
-        }
-
-        Ok(AuthUser {
-            id: 42,
-            username: credentials.username,
-            password: credentials.password,
-        })
+    // TODO
+    pub async fn authenticate(credentials: Credentials, pool: &PostgresPool) -> Result<User, HttpResponse> {
+        let result =  User::find_by_username(&credentials.username, pool).await;
+        let authed = match result {
+            Ok(user) => {
+                // TODO: figure out why I keep getting hacked
+                if &credentials.password != &user.password {
+                    return Err(HttpResponse::Unauthorized().json("Unauthorized"));
+                }
+                Ok(user)
+            },
+            _ => Err(HttpResponse::Unauthorized().json("Unauthorized")),
+        };
+        Ok(authed.unwrap())
     }
 }

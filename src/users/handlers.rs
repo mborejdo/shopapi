@@ -14,11 +14,15 @@ async fn find_all(pool: web::Data<PostgresPool>) -> impl Responder {
     }
 }
 
-async fn create(session: Session, input: web::Json<UserInput>, pool: web::Data<PostgresPool>) -> impl Responder {
-    // let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
-    // match user_id {
-    //     Some(id) => {
-    //         session.renew();
+async fn create(
+    session: Session, 
+    input: web::Json<UserInput>, 
+    pool: web::Data<PostgresPool>
+) -> impl Responder {
+    let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
+    match user_id {
+        Some(id) => {
+            session.renew();
             let result = User::create(input.into_inner(), pool.get_ref()).await;
             println!("{:?}", result);
             match result {
@@ -27,12 +31,15 @@ async fn create(session: Session, input: web::Json<UserInput>, pool: web::Data<P
                 },
                 _ => HttpResponse::BadRequest().body("Error trying to create new user"),
             }
-    //     }
-    //     None => HttpResponse::Unauthorized().json("Unauthorized"),
-    // }
+        }
+        None => HttpResponse::Unauthorized().json("Unauthorized"),
+    }
 }
 
-async fn find_by_id(id: web::Path<i32>, pool: web::Data<PostgresPool>) -> impl Responder {
+async fn find_by_id(
+    id: web::Path<i32>, 
+    pool: web::Data<PostgresPool>
+) -> impl Responder {
     let result = User::find_by_id(id.into_inner(), pool.get_ref()).await;
     match result {
         Ok(users) => HttpResponse::Ok().json(users),
@@ -61,7 +68,11 @@ async fn update(
     }
 }
 
-async fn delete(session: Session, id: web::Path<i32>, db_pool: web::Data<PostgresPool>) -> impl Responder {
+async fn delete(
+    session: Session, 
+    id: web::Path<i32>, 
+    db_pool: web::Data<PostgresPool>
+) -> impl Responder {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
 
     match user_id {
@@ -85,18 +96,21 @@ async fn delete(session: Session, id: web::Path<i32>, db_pool: web::Data<Postgre
 
 pub async fn login(
     credentials: web::Json<Credentials>,
-    session: Session,
+    session: Session, 
+    db_pool: web::Data<PostgresPool>
 ) -> Result<impl Responder, Error> {
     let credentials = credentials.into_inner();
 
-    match User::authenticate(credentials) {
-        Ok(user) => session.insert("user_id", user.id).unwrap(),
+    let user = match User::authenticate(credentials, db_pool.get_ref()).await {
+        Ok(user) => {
+            session.insert("user_id", user.id).unwrap();
+            user
+        },
         Err(err) => return Err(InternalError::from_response("", err).into()),
     };
 
-    Ok("Welcome!")
+    Ok(format!("Welcome!, {:?}", user))
 }
-
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(

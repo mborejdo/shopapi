@@ -13,12 +13,15 @@ async fn find_all(pool: web::Data<PostgresPool>) -> impl Responder {
     }
 }
 
-
-async fn create(session: Session, input: web::Json<ProductInput>, pool: web::Data<PostgresPool>) -> impl Responder {
+async fn create(
+    session: Session, 
+    input: web::Json<ProductInput>, 
+    pool: web::Data<PostgresPool>
+) -> impl Responder {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
 
     match user_id {
-        Some(id) => {
+        Some(_id) => {
             session.renew();
             let result = Product::create(input.into_inner(), pool.get_ref()).await;
             match result {
@@ -59,7 +62,11 @@ async fn update(
     }
 }
 
-async fn delete(session: Session, id: web::Path<i32>, db_pool: web::Data<PostgresPool>) -> impl Responder {
+async fn delete(
+    session: Session, 
+    id: web::Path<i32>, 
+    db_pool: web::Data<PostgresPool>
+) -> impl Responder {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
     match user_id {
         Some(_userid) => {
