@@ -13,7 +13,6 @@ use std::env;
 
 mod products;
 mod users;
-mod auth;
 mod errors;
 pub mod types;
 
@@ -28,24 +27,6 @@ async fn index() -> impl Responder {
 pub async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
-
-// async fn validator(
-//     req: ServiceRequest,
-//     credentials: BearerAuth,
-// ) -> Result<ServiceRequest, Error> {
-//     eprintln!("{:?}", credentials);
-
-//     match auth::validate_token("123") {
-//         Ok(res) => {
-//             if res == true {
-//                 Ok(req)
-//             } else {
-//                 Ok(req)
-//             }
-//         }
-//         Err(_) => Ok(req),
-//     }
-// }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -67,11 +48,10 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .data(pool.clone())
+            .app_data(pool.clone())
             .wrap(Logger::default())
             // .wrap(HttpAuthentication::bearer(validator))
             .wrap(Cors::permissive())
-            .route("/", web::get().to(index))
             .route("/health_check", web::get().to(health_check))
             .wrap(
                 SessionMiddleware::builder(
@@ -84,11 +64,11 @@ async fn main() -> std::io::Result<()> {
             )
             .route("/login", web::post().to(users::handlers::login))
             .service(
-                web::scope("/api").service(web::scope("/v1").configure(products::handlers::config)),
+                web::scope("/api").service(web::scope("/v1")
+                    .configure(users::handlers::config)
+                    .configure(products::handlers::config)),
             )
-            .service(
-                web::scope("/api").service(web::scope("/v1").configure(users::handlers::config)),
-            )
+            .route("/", web::get().to(index))
     })
     .bind(addr)?
     .run()

@@ -10,6 +10,8 @@ use actix_web::{
 pub struct UserInput {
     pub first_name: String,
     pub last_name: String,
+    pub username: String,
+    pub password: String,
     pub email: String,
 }
 
@@ -18,8 +20,10 @@ pub struct User {
     pub id: i32,
     pub first_name: String,
     pub last_name: String,
+    pub username: String,
+    pub password: String,
     pub email: String,
-    pub created_at: chrono::NaiveDateTime,
+    pub created_at: NaiveDateTime,
 }
 
 pub struct AuthUser {
@@ -39,7 +43,7 @@ impl User {
         let user = sqlx::query_as!(
             User,
             r#"
-              SELECT id, first_name, last_name, email, created_at
+              SELECT id, first_name, last_name, email, username, password, created_at
                   FROM users
               ORDER BY created_at
             "#
@@ -69,12 +73,14 @@ impl User {
         let user = sqlx::query_as!(
             User,
             r#"
-              INSERT INTO users (first_name, last_name, email) VALUES ($1, $2, $3)
-                RETURNING id, first_name, last_name, email, created_at
+              INSERT INTO users (first_name, last_name, email, username, password) VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, first_name, last_name, email, username, password, created_at
             "#,
             input.first_name,
             input.last_name,
-            input.email
+            input.email,
+            input.username,
+            input.password,
         )
         .fetch_one(&mut tx)
         .await?;
@@ -89,7 +95,7 @@ impl User {
             User,
             r#"
               UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4
-                RETURNING id, first_name, last_name, email, created_at
+                RETURNING id, first_name, last_name, email, username, password, created_at
             "#,
             input.first_name,
             input.last_name,

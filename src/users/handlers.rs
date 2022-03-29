@@ -15,18 +15,21 @@ async fn find_all(pool: web::Data<PostgresPool>) -> impl Responder {
 }
 
 async fn create(session: Session, input: web::Json<UserInput>, pool: web::Data<PostgresPool>) -> impl Responder {
-    let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
-    match user_id {
-        Some(id) => {
-            session.renew();
+    // let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
+    // match user_id {
+    //     Some(id) => {
+    //         session.renew();
             let result = User::create(input.into_inner(), pool.get_ref()).await;
+            println!("{:?}", result);
             match result {
-                Ok(users) => HttpResponse::Ok().json(users),
+                Ok(users) => {
+                    HttpResponse::Ok().json(users)
+                },
                 _ => HttpResponse::BadRequest().body("Error trying to create new user"),
             }
-        }
-        None => HttpResponse::Unauthorized().json("Unauthorized"),
-    }
+    //     }
+    //     None => HttpResponse::Unauthorized().json("Unauthorized"),
+    // }
 }
 
 async fn find_by_id(id: web::Path<i32>, pool: web::Data<PostgresPool>) -> impl Responder {
@@ -46,7 +49,7 @@ async fn update(
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
 
     match user_id {
-        Some(xid) => {
+        Some(_userid) => {
             session.renew();
             let result = User::update(id.into_inner(), input.into_inner(), pool.get_ref()).await;
             match result {
@@ -62,7 +65,7 @@ async fn delete(session: Session, id: web::Path<i32>, db_pool: web::Data<Postgre
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
 
     match user_id {
-        Some(xid) => {
+        Some(_userid) => {
             session.renew();
             let result = User::delete(id.into_inner(), db_pool.get_ref()).await;
             match result {

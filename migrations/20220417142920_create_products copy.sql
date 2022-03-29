@@ -1,4 +1,4 @@
-UPDATE TABLE products (
+CREATE TABLE products (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   price bigint NOT NULL,

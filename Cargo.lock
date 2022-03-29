@@ -630,26 +630,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
-name = "ecomapi"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-session",
- "actix-web",
- "actix-web-httpauth",
- "anyhow",
- "chrono",
- "derive_more",
- "dotenv",
- "env_logger",
- "futures",
- "serde",
- "serde_derive",
- "serde_json",
- "sqlx",
-]
-
-[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1546,6 +1526,26 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest 0.10.3",
+]
+
+[[package]]
+name = "shopapi"
+version = "0.1.0"
+dependencies = [
+ "actix-cors",
+ "actix-session",
+ "actix-web",
+ "actix-web-httpauth",
+ "anyhow",
+ "chrono",
+ "derive_more",
+ "dotenv",
+ "env_logger",
+ "futures",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sqlx",
 ]
 
 [[package]]
