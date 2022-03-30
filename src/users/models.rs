@@ -27,7 +27,7 @@ pub struct User {
 }
 
 pub struct AuthUser {
-    pub id: i64,
+    pub id: i32,
     pub username: String,
     pub password: String,
 }

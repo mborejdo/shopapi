@@ -5,7 +5,9 @@ use crate::{
 use actix_session::{Session};
 use actix_web::{web, HttpResponse, Responder};
 
-async fn find_all(pool: web::Data<PostgresPool>) -> impl Responder {
+async fn find_all(
+    pool: web::Data<PostgresPool>
+) -> impl Responder {
     let result = Product::find_all(pool.get_ref()).await;
     match result {
         Ok(products) => HttpResponse::Ok().json(products),
@@ -34,7 +36,10 @@ async fn create(
     
 }
 
-async fn find_by_id(id: web::Path<i32>, pool: web::Data<PostgresPool>) -> impl Responder {
+async fn find_by_id(
+    id: web::Path<i32>, 
+    pool: web::Data<PostgresPool>
+) -> impl Responder {
     let result = Product::find_by_id(id.into_inner(), pool.get_ref()).await;
     match result {
         Ok(product) => HttpResponse::Ok().json(product),

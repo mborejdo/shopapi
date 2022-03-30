@@ -2,10 +2,9 @@ use actix_session::{SessionMiddleware, storage::CookieSessionStore};
 use actix_cors::Cors;
 use actix_web::{
     cookie::{Key, SameSite},
-    error::InternalError,
-    middleware, middleware::Logger, 
+    middleware::Logger, 
     dev::ServiceRequest, web, App, HttpResponse, Error, HttpServer, Responder};
-use actix_web_httpauth::{extractors::AuthenticationError, extractors::bearer::BearerAuth, middleware::HttpAuthentication};
+use actix_web_httpauth::{extractors::bearer::BearerAuth};
 
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
@@ -16,7 +15,7 @@ mod users;
 mod errors;
 pub mod types;
 
-// API overview
+// MOVE ROUTES
 async fn index() -> impl Responder {
     HttpResponse::Ok().body(r#"
         Welcome to API.
@@ -24,18 +23,18 @@ async fn index() -> impl Responder {
     )
 }
 
-pub async fn health_check() -> HttpResponse {
+async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
-async fn validator(
-    req: ServiceRequest,
-    credentials: BearerAuth,
-) -> Result<ServiceRequest, Error> {
-    eprintln!("{:?}", credentials);
+// async fn validator(
+//     req: ServiceRequest,
+//     credentials: BearerAuth,
+// ) -> Result<ServiceRequest, Error> {
+//     eprintln!("{:?}", credentials);
 
-    Ok(req)
-}
+//     Ok(req)
+// }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -53,7 +52,7 @@ async fn main() -> std::io::Result<()> {
         .max_connections(5)
         .connect(&database_url)
         .await
-        .expect("Failed to create connections pool");
+        .expect("Failed to create pg pool");
 
     HttpServer::new(move || {
         App::new()
@@ -61,7 +60,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             // .wrap(HttpAuthentication::bearer(validator))
             .wrap(Cors::permissive())
-            .route("/health_check", web::get().to(health_check))
             .wrap(
                 SessionMiddleware::builder(
                     CookieSessionStore::default(),
@@ -71,13 +69,16 @@ async fn main() -> std::io::Result<()> {
                 .cookie_same_site(SameSite::Strict)
                 .build(),
             )
+            .route("/", web::get().to(index))
+            .route("/health_check", web::get().to(health_check))
             .route("/login", web::post().to(users::handlers::login))
             .service(
-                web::scope("/api").service(web::scope("/v1")
-                    .configure(users::handlers::config)
-                    .configure(products::handlers::config)),
+                web::scope("/api").service(
+                    web::scope("/v1")
+                        .configure(users::handlers::config)
+                        .configure(products::handlers::config)
+                ),
             )
-            .route("/", web::get().to(index))
     })
     .bind(addr)?
     .run()

@@ -1,4 +1,4 @@
-use actix_session::{Session};
+use actix_session::Session;
 
 use crate::{
     users::models::{User, UserInput, Credentials},
@@ -6,7 +6,9 @@ use crate::{
 };
 use actix_web::{web, HttpResponse, Error, Responder, error::InternalError};
 
-async fn find_all(pool: web::Data<PostgresPool>) -> impl Responder {
+async fn find_all(
+    pool: web::Data<PostgresPool>
+) -> impl Responder {
     let result = User::find_all(pool.get_ref()).await;
     match result {
         Ok(users) => HttpResponse::Ok().json(users),
