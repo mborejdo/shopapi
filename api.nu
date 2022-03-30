@@ -1,6 +1,6 @@
 curl -X POST http://localhost:8080/api/v1/products -H 'Content-Type: application/json' -d '{"name":"test2","price":60, "origin": "here", "cultivar": "some"}'
 
-curl --cookie "id=" -X POST http://localhost:8080/api/v1/users -H 'Content-Type: application/json' -d '{"first_name":"a","last_name":"aa", "email": "some", "username": "x", "password":"x"}'
+curl -X POST http://localhost:8080/api/v1/users -H 'Content-Type: application/json' -d '{"first_name":"ab","last_name":"bb", "email": "some", "username": "x", "password":"x"}'
 
 curl -X DELETE http://localhost:8080/api/v1/products/2
 

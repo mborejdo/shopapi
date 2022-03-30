@@ -1,4 +1,7 @@
-use crate::types::PostgresPool;
+use crate::{
+    auth,
+    types::PostgresPool,
+};
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
@@ -94,7 +97,7 @@ impl User {
             input.last_name,
             input.email,
             input.username,
-            input.password,
+            auth::hash(&input.password),
         )
         .fetch_one(&mut tx)
         .await?;
@@ -139,7 +142,7 @@ impl User {
         let authed = match result {
             Ok(user) => {
                 // TODO: figure out why I keep getting hacked
-                if &credentials.password != &user.password {
+                if auth::hash(&credentials.password) != user.password {
                     return Err(HttpResponse::Unauthorized().json("Unauthorized"));
                 }
                 Ok(user)

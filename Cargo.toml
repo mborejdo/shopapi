@@ -10,6 +10,8 @@ actix-cors = "*"
 actix-session = { version = "*", features = [ "cookie-session" ] }
 sqlx = { version = "*", features = [ "runtime-tokio-rustls", "postgres", "chrono", "migrate", "offline" ] }
 dotenv = "*"
+argon2rs = "*"
+jsonwebtoken = "*"
 env_logger = "0.8.3"
 serde = "1.0.1"
 serde_derive = "1.0"

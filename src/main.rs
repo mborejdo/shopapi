@@ -3,7 +3,7 @@ use actix_cors::Cors;
 use actix_web::{
     cookie::{Key, SameSite},
     middleware::Logger, 
-    dev::ServiceRequest, web, App, HttpResponse, Error, HttpServer, Responder};
+    web, App, HttpResponse, HttpServer, Responder};
 use actix_web_httpauth::{extractors::bearer::BearerAuth};
 
 use dotenv::dotenv;
@@ -12,6 +12,7 @@ use std::env;
 
 mod products;
 mod users;
+mod auth;
 mod errors;
 pub mod types;
 
