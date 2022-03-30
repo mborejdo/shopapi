@@ -5,6 +5,7 @@ use actix_web::{
     middleware::Logger, 
     web, App, HttpResponse, HttpServer, Responder};
 use actix_web_httpauth::{extractors::bearer::BearerAuth};
+use actix_files::Files;
 
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
@@ -13,8 +14,10 @@ use std::env;
 mod products;
 mod users;
 mod auth;
+// mod utils;
 mod errors;
 pub mod types;
+
 
 // MOVE ROUTES
 async fn index() -> impl Responder {
@@ -39,6 +42,7 @@ async fn health_check() -> HttpResponse {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
     dotenv().ok();
     env_logger::init();
 
@@ -57,7 +61,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .data(pool.clone())
+            .app_data(pool.clone())
             .wrap(Logger::default())
             // .wrap(HttpAuthentication::bearer(validator))
             .wrap(Cors::permissive())
@@ -78,6 +82,13 @@ async fn main() -> std::io::Result<()> {
                     web::scope("/v1")
                         .configure(users::handlers::config)
                         .configure(products::handlers::config)
+                ),
+            )
+            .service(
+                web::scope("/static").default_service(
+                    Files::new("", "./static")
+                        .index_file("index.html")
+                        .use_last_modified(true),
                 ),
             )
     })

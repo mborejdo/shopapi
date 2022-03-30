@@ -8,6 +8,7 @@ actix-web = "*"
 actix-web-httpauth = "*"
 actix-cors = "*"
 actix-session = { version = "*", features = [ "cookie-session" ] }
+actix-files = "*"
 sqlx = { version = "*", features = [ "runtime-tokio-rustls", "postgres", "chrono", "migrate", "offline" ] }
 dotenv = "*"
 argon2rs = "*"
@@ -20,3 +21,5 @@ derive_more = "0.99.2"
 anyhow = "1.0.40"
 chrono = { version = "0.4", features = ["serde"]}
 futures = "0.3.14"
+ureq = "*"
+scraper = "0.12.0"
