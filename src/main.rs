@@ -1,37 +1,26 @@
-use actix_session::{SessionMiddleware, storage::CookieSessionStore};
 use actix_cors::Cors;
+use actix_files::Files;
+use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
     cookie::{Key, SameSite},
-    middleware::Logger, 
-    web, App, HttpResponse, HttpServer, Responder};
-use actix_files::Files;
+    middleware::Logger,
+    web, App, HttpServer,
+};
 
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 
-mod handlers;
-mod models;
 mod auth;
 mod errors;
+mod handlers;
+mod models;
+mod routes;
 
 pub mod types;
 
-// MOVE ROUTES
-async fn index() -> impl Responder {
-    HttpResponse::Ok().body(r#"
-        Welcome to API.
-    "#
-    )
-}
-
-async fn health_check() -> HttpResponse {
-    HttpResponse::Ok().finish()
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     dotenv().ok();
     env_logger::init();
 
@@ -39,7 +28,7 @@ async fn main() -> std::io::Result<()> {
     let host = env::var("HOST").expect("environment variable: HOST");
     let port = env::var("PORT").expect("environment variable: PORT");
     let addr = format!("{}:{}", host, port);
-    
+
     let signing_key = Key::generate();
 
     let pool = PgPoolOptions::new()
@@ -47,14 +36,6 @@ async fn main() -> std::io::Result<()> {
         .connect(&database_url)
         .await
         .expect("Failed to create pg pool");
-    
-    // let error_handlers = ErrorHandlers::new()
-    //     .handler(
-    //         http::StatusCode::INTERNAL_SERVER_ERROR,
-    //         api::internal_server_error,
-    //     )
-    //     .handler(http::StatusCode::BAD_REQUEST, api::bad_request)
-    //     .handler(http::StatusCode::NOT_FOUND, api::not_found);
 
     HttpServer::new(move || {
         App::new()
@@ -63,23 +44,19 @@ async fn main() -> std::io::Result<()> {
             // .wrap(HttpAuthentication::bearer(validator))
             .wrap(Cors::permissive())
             .wrap(
-                SessionMiddleware::builder(
-                    CookieSessionStore::default(),
-                    signing_key.clone(),
-                )
-                .cookie_http_only(false)
-                .cookie_same_site(SameSite::Strict)
-                .build(),
+                SessionMiddleware::builder(CookieSessionStore::default(), signing_key.clone())
+                    .cookie_http_only(false)
+                    .cookie_same_site(SameSite::Strict)
+                    .build(),
             )
-            // .wrap(error_handlers)
-            .route("/", web::get().to(index))
-            .route("/health_check", web::get().to(health_check))
+            .route("/", web::get().to(routes::index))
             .route("/login", web::post().to(handlers::users::login))
             .service(
                 web::scope("/api").service(
                     web::scope("/v1")
                         .configure(handlers::users::config)
                         .configure(handlers::products::config)
+                        .configure(handlers::orders::config),
                 ),
             )
             .service(

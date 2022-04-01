@@ -1,8 +1,5 @@
-use crate::{
-    auth,
-    types::PostgresPool,
-};
 use crate::errors::ServiceError;
+use crate::{auth, types::PostgresPool};
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
@@ -84,11 +81,9 @@ impl User {
     }
 
     pub async fn create(input: UserInput, pool: &PostgresPool) -> Result<User> {
-        let result =  User::find_by_username(&input.username, pool).await;
+        let result = User::find_by_username(&input.username, pool).await;
         match result {
-            Ok(user) => {
-                Ok(user)
-            },
+            Ok(user) => Ok(user),
             _ => {
                 let mut tx = pool.begin().await?;
                 let user = sqlx::query_as!(
@@ -142,16 +137,19 @@ impl User {
         Ok(result.rows_affected())
     }
 
-    pub async fn authenticate(credentials: Credentials, pool: &PostgresPool) -> Result<User, ServiceError> {
-        let result =  User::find_by_username(&credentials.username, pool).await;
+    pub async fn authenticate(
+        credentials: Credentials,
+        pool: &PostgresPool,
+    ) -> Result<User, ServiceError> {
+        let result = User::find_by_username(&credentials.username, pool).await;
         match result {
             Ok(user) => {
                 // TODO: figure out why I keep getting hacked
                 if auth::hash(&credentials.password) != user.password {
                     return Err(ServiceError::Unauthorized);
                 }
-                return Ok(user)
-            },
+                return Ok(user);
+            }
             _ => return Err(ServiceError::Unauthorized),
         }
     }
