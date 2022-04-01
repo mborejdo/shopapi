@@ -11,8 +11,8 @@ use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 
-mod products;
-mod users;
+mod handlers;
+mod models;
 mod auth;
 mod errors;
 
@@ -84,12 +84,12 @@ async fn main() -> std::io::Result<()> {
             // .wrap(error_handlers)
             .route("/", web::get().to(index))
             .route("/health_check", web::get().to(health_check))
-            .route("/login", web::post().to(users::handlers::login))
+            .route("/login", web::post().to(handlers::users::login))
             .service(
                 web::scope("/api").service(
                     web::scope("/v1")
-                        .configure(users::handlers::config)
-                        .configure(products::handlers::config)
+                        .configure(handlers::users::config)
+                        .configure(handlers::products::config)
                 ),
             )
             .service(
