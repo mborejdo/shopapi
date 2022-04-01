@@ -19,7 +19,6 @@ pub struct Auth {
 
 }
 
-
 impl Auth {
     pub async fn authenticate(
         credentials: Credentials,
