@@ -81,7 +81,7 @@ impl Product {
         let product = sqlx::query_as!(
             Product,
             r#"
-              UPDATE products SET name = $1, price = $2, origin = $3 , cultivar = $4, images = $5 WHERE id = $6
+              UPDATE products SET name = $1, price = $2, origin = $3, cultivar = $4, images = $5 WHERE id = $6
                RETURNING id, name, price, origin, cultivar, images, updated_at, created_at
             "#,
             input.name,

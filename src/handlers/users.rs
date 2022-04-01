@@ -51,7 +51,10 @@ async fn create(
 async fn find_by_id(id: web::Path<i32>, pool: web::Data<PostgresPool>) -> impl Responder {
     let result = User::find_by_id(id.into_inner(), pool.get_ref()).await;
     match result {
-        Ok(users) => HttpResponse::Ok().json(users),
+        Ok(mut user) => {
+            user.password = "".to_string();
+            HttpResponse::Ok().json(user)
+        },
         _ => HttpResponse::NotFound().body("User not found"),
     }
 }

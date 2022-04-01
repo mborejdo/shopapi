@@ -38,7 +38,7 @@ pub struct Credentials {
 
 impl User {
     pub async fn find_all(pool: &PostgresPool) -> Result<Vec<User>> {
-        let user = sqlx::query_as!(
+        let users = sqlx::query_as!(
             User,
             r#"
                 SELECT id, first_name, last_name, email, username, password, created_at
@@ -49,7 +49,7 @@ impl User {
         .fetch_all(pool)
         .await?;
 
-        Ok(user)
+        Ok(users)
     }
 
     pub async fn find_by_id(id: i32, pool: &PostgresPool) -> Result<User> {
@@ -66,7 +66,7 @@ impl User {
         Ok(user)
     }
 
-    async fn find_by_username(username: &str, pool: &PostgresPool) -> Result<User> {
+    pub async fn find_by_username(username: &str, pool: &PostgresPool) -> Result<User> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -86,7 +86,7 @@ impl User {
             Ok(user) => Ok(user),
             _ => {
                 let mut tx = pool.begin().await?;
-                let user = sqlx::query_as!(
+                let mut user = sqlx::query_as!(
                     User,
                     r#"
                         INSERT INTO users (first_name, last_name, email, username, password) VALUES ($1, $2, $3, $4, $5)
@@ -102,6 +102,7 @@ impl User {
                 .await?;
                 tx.commit().await?;
 
+                user.password = "".to_string();
                 Ok(user)
             }
         }
@@ -109,7 +110,7 @@ impl User {
 
     pub async fn update(id: i32, input: UserInput, pool: &PostgresPool) -> Result<User> {
         let mut tx = pool.begin().await.unwrap();
-        let user = sqlx::query_as!(
+        let mut user = sqlx::query_as!(
             User,
             r#"
                 UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4
@@ -124,6 +125,7 @@ impl User {
         .await?;
         tx.commit().await.unwrap();
 
+        user.password = "".to_string();
         Ok(user)
     }
 
@@ -145,10 +147,10 @@ impl User {
         match result {
             Ok(user) => {
                 // TODO: figure out why I keep getting hacked
-                if auth::hash(&credentials.password) != user.password {
-                    return Err(ServiceError::Unauthorized);
+                if auth::hash(&credentials.password) == user.password {
+                    return Ok(user);
                 }
-                return Ok(user);
+                return Err(ServiceError::Unauthorized);
             }
             _ => return Err(ServiceError::Unauthorized),
         }

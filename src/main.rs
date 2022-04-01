@@ -59,6 +59,7 @@ async fn main() -> std::io::Result<()> {
                         .configure(handlers::orders::config),
                 ),
             )
+            .configure(handlers::auth::config)
             .service(
                 web::scope("/static").default_service(
                     Files::new("", "./static")
