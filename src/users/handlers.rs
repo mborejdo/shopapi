@@ -1,18 +1,18 @@
 use actix_session::Session;
-
+use crate::errors::ServiceError;
 use crate::{
     users::models::{User, UserInput, Credentials},
     types::PostgresPool,
 };
-use actix_web::{web, HttpResponse, Error, Responder, error::InternalError};
+use actix_web::{web, HttpResponse, Responder};
 
 async fn find_all(
     pool: web::Data<PostgresPool>
-) -> impl Responder {
+) -> Result<impl Responder, ServiceError> {
     let result = User::find_all(pool.get_ref()).await;
     match result {
-        Ok(users) => HttpResponse::Ok().json(users),
-        _ => HttpResponse::BadRequest().body("Error trying to read all users from database"),
+        Ok(users) => Ok(HttpResponse::Ok().json(users)),
+        _ => Err(ServiceError::BadRequest("Error trying to read all users from database".to_string())),
     }
 }
 
@@ -20,22 +20,21 @@ async fn create(
     session: Session, 
     input: web::Json<UserInput>, 
     pool: web::Data<PostgresPool>
-) -> impl Responder {
-    // let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
-    // match user_id {
-        // Some(id) => {
-            // session.renew();
+) -> Result<impl Responder, ServiceError> {
+    let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
+    match user_id {
+        Some(_id) => {
+            session.renew();
             let result = User::create(input.into_inner(), pool.get_ref()).await;
-            println!("{:?}", result);
             match result {
                 Ok(users) => {
-                    HttpResponse::Ok().json(users)
+                    Ok(HttpResponse::Ok().json(users))
                 },
-                _ => HttpResponse::BadRequest().body("Error trying to create new user"),
+                _ => Err(ServiceError::BadRequest("Error trying to create new user".to_string())),
             }
-        // }
-        // None => HttpResponse::Unauthorized().json("Unauthorized"),
-    // }
+        }
+        None => Err(ServiceError::Unauthorized),
+    }
 }
 
 async fn find_by_id(
@@ -54,7 +53,7 @@ async fn update(
     id: web::Path<i32>,
     input: web::Json<UserInput>,
     pool: web::Data<PostgresPool>,
-) -> impl Responder {
+) -> Result<impl Responder, ServiceError> {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
 
     match user_id {
@@ -62,11 +61,11 @@ async fn update(
             session.renew();
             let result = User::update(id.into_inner(), input.into_inner(), pool.get_ref()).await;
             match result {
-                Ok(users) => HttpResponse::Ok().json(users),
-                _ => HttpResponse::NotFound().body("User not found"),
+                Ok(users) => Ok(HttpResponse::Ok().json(users)),
+                _ => Ok(HttpResponse::NotFound().body("User not found")),
             }
         }
-        None => HttpResponse::Unauthorized().json("Unauthorized"),
+        None => Err(ServiceError::Unauthorized),
     }
 }
 
@@ -74,7 +73,7 @@ async fn delete(
     session: Session, 
     id: web::Path<i32>, 
     db_pool: web::Data<PostgresPool>
-) -> impl Responder {
+) -> Result<impl Responder, ServiceError> {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
 
     match user_id {
@@ -84,23 +83,23 @@ async fn delete(
             match result {
                 Ok(rows) => {
                     if rows > 0 {
-                        HttpResponse::Ok().body(format!("Successfully deleted {} record(s)", rows))
+                        Ok(HttpResponse::Ok().body(format!("Successfully deleted {} record(s)", rows)))
                     } else {
-                        HttpResponse::NotFound().body("User not found")
+                        Ok(HttpResponse::NotFound().body("User not found"))
                     }
                 }
-                _ => HttpResponse::InternalServerError().body("Failed to delete user"),
+                _ => Err(ServiceError::InternalServerError),
             }
         }
-        None => HttpResponse::Unauthorized().json("Unauthorized"),
+        None => Err(ServiceError::Unauthorized),
     }
 }
 
 pub async fn login(
+    session: Session,
     credentials: web::Json<Credentials>,
-    session: Session, 
     db_pool: web::Data<PostgresPool>
-) -> Result<impl Responder, Error> {
+) -> Result<impl Responder, ServiceError> {
     let credentials = credentials.into_inner();
 
     let user = match User::authenticate(credentials, db_pool.get_ref()).await {
@@ -108,7 +107,7 @@ pub async fn login(
             session.insert("user_id", user.id).unwrap();
             user
         },
-        Err(err) => return Err(InternalError::from_response("", err).into()),
+        Err(_err) => return Err(ServiceError::Unauthorized),
     };
 
     Ok(format!("Welcome!, {:?}", user))

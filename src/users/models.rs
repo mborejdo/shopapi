@@ -2,12 +2,10 @@ use crate::{
     auth,
     types::PostgresPool,
 };
+use crate::errors::ServiceError;
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use actix_web::{
-    HttpResponse
-};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserInput {
@@ -29,11 +27,11 @@ pub struct User {
     pub created_at: NaiveDateTime,
 }
 
-pub struct AuthUser {
-    pub id: i32,
-    pub username: String,
-    pub password: String,
-}
+// pub struct AuthUser {
+//     pub id: i32,
+//     pub username: String,
+//     pub password: String,
+// }
 
 #[derive(Deserialize)]
 pub struct Credentials {
@@ -136,18 +134,17 @@ impl User {
         Ok(result.rows_affected())
     }
 
-    // TODO
-    pub async fn authenticate(credentials: Credentials, pool: &PostgresPool) -> Result<User, HttpResponse> {
+    pub async fn authenticate(credentials: Credentials, pool: &PostgresPool) -> Result<User, ServiceError> {
         let result =  User::find_by_username(&credentials.username, pool).await;
         let authed = match result {
             Ok(user) => {
                 // TODO: figure out why I keep getting hacked
                 if auth::hash(&credentials.password) != user.password {
-                    return Err(HttpResponse::Unauthorized().json("Unauthorized"));
+                    return Err(ServiceError::Unauthorized);
                 }
                 Ok(user)
             },
-            _ => Err(HttpResponse::Unauthorized().json("Unauthorized")),
+            _ => Err(ServiceError::Unauthorized),
         };
         Ok(authed.unwrap())
     }

@@ -14,10 +14,9 @@ use std::env;
 mod products;
 mod users;
 mod auth;
-// mod utils;
 mod errors;
-pub mod types;
 
+pub mod types;
 
 // MOVE ROUTES
 async fn index() -> impl Responder {
@@ -58,10 +57,18 @@ async fn main() -> std::io::Result<()> {
         .connect(&database_url)
         .await
         .expect("Failed to create pg pool");
+    
+    // let error_handlers = ErrorHandlers::new()
+    //     .handler(
+    //         http::StatusCode::INTERNAL_SERVER_ERROR,
+    //         api::internal_server_error,
+    //     )
+    //     .handler(http::StatusCode::BAD_REQUEST, api::bad_request)
+    //     .handler(http::StatusCode::NOT_FOUND, api::not_found);
 
     HttpServer::new(move || {
         App::new()
-            .app_data(pool.clone())
+            .app_data(web::Data::new(pool.clone()))
             .wrap(Logger::default())
             // .wrap(HttpAuthentication::bearer(validator))
             .wrap(Cors::permissive())
@@ -74,6 +81,7 @@ async fn main() -> std::io::Result<()> {
                 .cookie_same_site(SameSite::Strict)
                 .build(),
             )
+            // .wrap(error_handlers)
             .route("/", web::get().to(index))
             .route("/health_check", web::get().to(health_check))
             .route("/login", web::post().to(users::handlers::login))

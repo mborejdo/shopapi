@@ -2,16 +2,17 @@ use crate::{
     products::models::{Product, ProductInput},
     types::PostgresPool,
 };
+use crate::errors::ServiceError;
 use actix_session::{Session};
 use actix_web::{web, HttpResponse, Responder};
 
 async fn find_all(
     pool: web::Data<PostgresPool>
-) -> impl Responder {
+) -> Result<impl Responder, ServiceError> {
     let result = Product::find_all(pool.get_ref()).await;
     match result {
-        Ok(products) => HttpResponse::Ok().json(products),
-        _ => HttpResponse::BadRequest().body("Error trying to read all products from database"),
+        Ok(products) => Ok(HttpResponse::Ok().json(products)),
+        _ => Err(ServiceError::BadRequest("Error trying to read all products from database".to_string())),
     }
 }
 
@@ -19,7 +20,7 @@ async fn create(
     session: Session, 
     input: web::Json<ProductInput>, 
     pool: web::Data<PostgresPool>
-) -> impl Responder {
+) -> Result<impl Responder, ServiceError> {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
 
     match user_id {
@@ -27,13 +28,12 @@ async fn create(
             session.renew();
             let result = Product::create(input.into_inner(), pool.get_ref()).await;
             match result {
-                Ok(product) => HttpResponse::Ok().json(product),
-                _ => HttpResponse::BadRequest().body("Error trying to create new product"),
+                Ok(product) => Ok(HttpResponse::Ok().json(product)),
+                _ => Err(ServiceError::BadRequest("Error trying to create new product".to_string())),
             }
         }
-        None => HttpResponse::Unauthorized().json("Unauthorized"),
+        None => Err(ServiceError::Unauthorized),
     }
-    
 }
 
 async fn find_by_id(
@@ -52,18 +52,18 @@ async fn update(
     id: web::Path<i32>,
     input: web::Json<ProductInput>,
     pool: web::Data<PostgresPool>,
-) -> impl Responder {
+) -> Result<impl Responder, ServiceError> {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
     match user_id {
         Some(_userid) => {
             session.renew();
             let result = Product::update(id.into_inner(), input.into_inner(), pool.get_ref()).await;
             match result {
-                Ok(product) => HttpResponse::Ok().json(product),
-                _ => HttpResponse::NotFound().body("Product not found"),
+                Ok(product) => Ok(HttpResponse::Ok().json(product)),
+                _ => Ok(HttpResponse::NotFound().body("Product not found")),
             }
         }
-        None => HttpResponse::Unauthorized().json("Unauthorized"),
+        None => Err(ServiceError::Unauthorized),
     }
 }
 
@@ -71,7 +71,7 @@ async fn delete(
     session: Session, 
     id: web::Path<i32>, 
     db_pool: web::Data<PostgresPool>
-) -> impl Responder {
+) -> Result<impl Responder, ServiceError> {
     let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
     match user_id {
         Some(_userid) => {
@@ -80,15 +80,15 @@ async fn delete(
             match result {
                 Ok(rows) => {
                     if rows > 0 {
-                        HttpResponse::Ok().body(format!("Successfully deleted {} record(s)", rows))
+                        Ok(HttpResponse::Ok().body(format!("Successfully deleted {} record(s)", rows)))
                     } else {
-                        HttpResponse::NotFound().body("Product not found")
+                        Ok(HttpResponse::NotFound().body("Product not found"))
                     }
                 }
-                _ => HttpResponse::InternalServerError().body("Failed to delete product"),
+                _ => Err(ServiceError::InternalServerError),
             }
         }
-        None => HttpResponse::Unauthorized().json("Unauthorized"),
+        None => Err(ServiceError::Unauthorized),
     }
 }
 
