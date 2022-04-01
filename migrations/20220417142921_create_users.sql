@@ -5,5 +5,6 @@ CREATE TABLE users (
   username TEXT NOT NULL,
   password TEXT NOT NULL,
   email TEXT NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

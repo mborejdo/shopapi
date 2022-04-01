@@ -4,7 +4,6 @@ use actix_web::{
     cookie::{Key, SameSite},
     middleware::Logger, 
     web, App, HttpResponse, HttpServer, Responder};
-use actix_web_httpauth::{extractors::bearer::BearerAuth};
 use actix_files::Files;
 
 use dotenv::dotenv;
@@ -29,15 +28,6 @@ async fn index() -> impl Responder {
 async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
-
-// async fn validator(
-//     req: ServiceRequest,
-//     credentials: BearerAuth,
-// ) -> Result<ServiceRequest, Error> {
-//     eprintln!("{:?}", credentials);
-
-//     Ok(req)
-// }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

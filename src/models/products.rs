@@ -61,7 +61,7 @@ impl Product {
             Product,
             r#"
               INSERT INTO products (name, price, origin, cultivar, images) VALUES ($1, $2, $3, $4, $5)
-              RETURNING id, name, price, origin, cultivar, images, updated_at, created_at
+               RETURNING id, name, price, origin, cultivar, images, updated_at, created_at
             "#,
             input.name,
             input.price,
@@ -82,7 +82,7 @@ impl Product {
             Product,
             r#"
               UPDATE products SET name = $1, price = $2, origin = $3 , cultivar = $4, images = $5 WHERE id = $6
-              RETURNING id, name, price, origin, cultivar, images, updated_at, created_at
+               RETURNING id, name, price, origin, cultivar, images, updated_at, created_at
             "#,
             input.name,
             input.price,

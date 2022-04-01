@@ -7,12 +7,21 @@ use crate::{
 use actix_web::{web, HttpResponse, Responder};
 
 async fn find_all(
+    session: Session, 
     pool: web::Data<PostgresPool>
 ) -> Result<impl Responder, ServiceError> {
-    let result = User::find_all(pool.get_ref()).await;
-    match result {
-        Ok(users) => Ok(HttpResponse::Ok().json(users)),
-        _ => Err(ServiceError::BadRequest("Error trying to read all users from database".to_string())),
+    let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
+
+    match user_id {
+        Some(_userid) => {
+            session.renew();
+            let result = User::find_all(pool.get_ref()).await;
+            match result {
+                Ok(users) => Ok(HttpResponse::Ok().json(users)),
+                _ => Err(ServiceError::BadRequest("Error trying to read all users from database".to_string())),
+            }
+        }
+        None => Err(ServiceError::Unauthorized),
     }
 }
 
@@ -21,9 +30,9 @@ async fn create(
     input: web::Json<UserInput>, 
     pool: web::Data<PostgresPool>
 ) -> Result<impl Responder, ServiceError> {
-    let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
-    match user_id {
-        Some(_id) => {
+    // let user_id: Option<i64> = session.get("user_id").unwrap_or(None);
+    // match user_id {
+        // Some(_userid) => {
             session.renew();
             let result = User::create(input.into_inner(), pool.get_ref()).await;
             match result {
@@ -32,9 +41,9 @@ async fn create(
                 },
                 _ => Err(ServiceError::BadRequest("Error trying to create new user".to_string())),
             }
-        }
-        None => Err(ServiceError::Unauthorized),
-    }
+        // }
+        // None => Err(ServiceError::Unauthorized),
+    // }
 }
 
 async fn find_by_id(

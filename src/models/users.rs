@@ -84,24 +84,32 @@ impl User {
     }
 
     pub async fn create(input: UserInput, pool: &PostgresPool) -> Result<User> {
-        let mut tx = pool.begin().await?;
-        let user = sqlx::query_as!(
-            User,
-            r#"
-                INSERT INTO users (first_name, last_name, email, username, password) VALUES ($1, $2, $3, $4, $5)
-                RETURNING id, first_name, last_name, email, username, password, created_at
-            "#,
-            input.first_name,
-            input.last_name,
-            input.email,
-            input.username,
-            auth::hash(&input.password),
-        )
-        .fetch_one(&mut tx)
-        .await?;
-        tx.commit().await?;
+        let result =  User::find_by_username(&input.username, pool).await;
+        match result {
+            Ok(user) => {
+                Ok(user)
+            },
+            _ => {
+                let mut tx = pool.begin().await?;
+                let user = sqlx::query_as!(
+                    User,
+                    r#"
+                        INSERT INTO users (first_name, last_name, email, username, password) VALUES ($1, $2, $3, $4, $5)
+                         RETURNING id, first_name, last_name, email, username, password, created_at
+                    "#,
+                    input.first_name,
+                    input.last_name,
+                    input.email,
+                    input.username,
+                    auth::hash(&input.password),
+                )
+                .fetch_one(&mut tx)
+                .await?;
+                tx.commit().await?;
 
-        Ok(user)
+                Ok(user)
+            }
+        }
     }
 
     pub async fn update(id: i32, input: UserInput, pool: &PostgresPool) -> Result<User> {
@@ -110,7 +118,7 @@ impl User {
             User,
             r#"
                 UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4
-                RETURNING id, first_name, last_name, email, username, password, created_at
+                 RETURNING id, first_name, last_name, email, username, password, created_at
             "#,
             input.first_name,
             input.last_name,
@@ -136,16 +144,15 @@ impl User {
 
     pub async fn authenticate(credentials: Credentials, pool: &PostgresPool) -> Result<User, ServiceError> {
         let result =  User::find_by_username(&credentials.username, pool).await;
-        let authed = match result {
+        match result {
             Ok(user) => {
                 // TODO: figure out why I keep getting hacked
                 if auth::hash(&credentials.password) != user.password {
                     return Err(ServiceError::Unauthorized);
                 }
-                Ok(user)
+                return Ok(user)
             },
-            _ => Err(ServiceError::Unauthorized),
-        };
-        Ok(authed.unwrap())
+            _ => return Err(ServiceError::Unauthorized),
+        }
     }
 }
