@@ -22,6 +22,7 @@ pub struct User {
     pub password: String,
     pub email: String,
     pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 // pub struct AuthUser {
@@ -41,7 +42,7 @@ impl User {
         let users = sqlx::query_as!(
             User,
             r#"
-                SELECT id, first_name, last_name, email, username, password, created_at
+                SELECT id, first_name, last_name, email, username, password, created_at, updated_at
                     FROM users
                 ORDER BY created_at
             "#
@@ -90,7 +91,7 @@ impl User {
                     User,
                     r#"
                         INSERT INTO users (first_name, last_name, email, username, password) VALUES ($1, $2, $3, $4, $5)
-                         RETURNING id, first_name, last_name, email, username, password, created_at
+                         RETURNING id, first_name, last_name, email, username, password, created_at, updated_at
                     "#,
                     input.first_name,
                     input.last_name,
@@ -114,7 +115,7 @@ impl User {
             User,
             r#"
                 UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4
-                 RETURNING id, first_name, last_name, email, username, password, created_at
+                 RETURNING id, first_name, last_name, email, username, password, created_at, updated_at
             "#,
             input.first_name,
             input.last_name,

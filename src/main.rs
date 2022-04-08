@@ -6,6 +6,8 @@ use actix_web::{
     middleware::Logger,
     web, App, HttpServer,
 };
+use serde::{Serialize, Deserialize};
+use meilisearch_sdk::{document::*, client::*};
 
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
@@ -18,6 +20,20 @@ mod models;
 mod routes;
 
 pub mod types;
+#[derive(Serialize, Deserialize, Debug)]
+struct Licenceholder {
+    id: f64,
+    holder: String,
+}
+
+// That trait is required to make a struct usable by an index
+impl Document for Licenceholder {
+    type UIDType = f64;
+
+    fn get_uid(&self) -> &Self::UIDType {
+        &self.id
+    }
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -36,6 +52,16 @@ async fn main() -> std::io::Result<()> {
         .connect(&database_url)
         .await
         .expect("Failed to create pg pool");
+
+        let client = Client::new("http://10.13.100.16:7700", "secret");
+        let result = client.index("candata")
+            .search()
+            .with_query("can")
+            .execute::<Licenceholder>()
+            .await
+            .expect("cannot get meilidata");
+
+        println!("{:?}", result.hits);
 
     HttpServer::new(move || {
         App::new()
