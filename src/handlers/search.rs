@@ -3,6 +3,7 @@ use actix_web::{web, Responder, HttpResponse};
 use crate::{
     models::search::meili_search,
 };
+
 pub async fn search(
     query: web::Path<String>,
 ) -> Result<impl Responder, ServiceError> {

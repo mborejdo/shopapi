@@ -21,13 +21,13 @@ impl Document for Licenceholder {
 
 pub async fn meili_search(query: &str) -> Result<Vec<Licenceholder>> {
     let mut fresh_formatted_results = Vec::new();
-                 
     let client = Client::new("http://10.13.100.16:7700", "secret");
     let result = client.index("candata")
         .search()
         .with_query(query)
         .execute::<Licenceholder>()
         .await?;
+
     for res in result.hits {
         fresh_formatted_results.push(res.result);
     }
