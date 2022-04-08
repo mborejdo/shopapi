@@ -9,10 +9,7 @@ pub async fn search(
 ) -> Result<impl Responder, ServiceError> {
     let data = meili_search(&query).await;
     match data {
-        Ok(documents) => {
-            println!("{:?}", documents);
-            Ok(HttpResponse::Ok().json(documents))
-        },
+        Ok(documents) => Ok(HttpResponse::Ok().json(documents)),
         _ => Err(ServiceError::BadRequest(
             "Error searching".to_string(),
         )),
