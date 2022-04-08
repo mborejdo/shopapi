@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use meilisearch_sdk::{document::*, client::*, search::SearchResult};
 use anyhow::Result;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Licenceholder {
     id: f64,
     holder: String,
@@ -19,15 +19,15 @@ impl Document for Licenceholder {
 }
 
 pub async fn meili_search(query: &str) -> Result<Vec<SearchResult<Licenceholder>>> {
-        let client = Client::new("http://10.13.100.16:7700", "secret");
-        let result = client.index("candata")
-            .search()
-            .with_query(query)
-            .execute::<Licenceholder>()
-            .await
-            .expect("cannot get meilidata");
+    let client = Client::new("http://10.13.100.16:7700", "secret");
+    let result = client.index("candata")
+        .search()
+        .with_query(query)
+        .execute::<Licenceholder>()
+        .await
+        .expect("cannot get meilidata");
 
-        println!("{:?}", result.hits);
+    println!("{:?}", result.hits);
 
-        Ok(result.hits)
+    Ok(result.hits)
 }

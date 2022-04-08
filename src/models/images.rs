@@ -51,20 +51,6 @@ impl Image {
         Ok(image)
     }
 
-    // pub async fn find_by_username(name: i32, pool: &PostgresPool) -> Result<Images> {
-    //     let images = sqlx::query_as!(
-    //         Images,
-    //         r#"
-    //           SELECT * FROM imagess WHERE name = $1
-    //         "#,
-    //         name
-    //     )
-    //     .fetch_one(&*pool)
-    //     .await?;
-
-    //     Ok(images)
-    // }
-
     pub async fn create(input: ImageInput, pool: &PostgresPool) -> Result<Image> {
         let mut tx = pool.begin().await?;
         let image = sqlx::query_as!(
