@@ -1,5 +1,5 @@
 use crate::errors::ServiceError;
-use actix_web::{web, Responder};
+use actix_web::{web, Responder, HttpResponse};
 use crate::{
     models::search::meili_search,
 };
@@ -8,7 +8,10 @@ pub async fn search(
 ) -> Result<impl Responder, ServiceError> {
     let data = meili_search(&query).await;
     match data {
-        Ok(documents) => Ok(format!("Found:!, {:?}", documents)),
+        Ok(documents) => {
+            println!("{:?}", documents);
+            Ok(HttpResponse::Ok().json(documents))
+        },
         _ => Err(ServiceError::BadRequest(
             "Error searching".to_string(),
         )),
